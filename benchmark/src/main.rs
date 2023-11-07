@@ -9,6 +9,7 @@ use tokenizers::{FromPretrainedParameters, Tokenizer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
+const LOREM_IPSUM: &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
 /// App Configuration
 #[derive(Parser, Debug)]
@@ -58,6 +59,10 @@ struct Args {
     /// completely and directly talks to the gRPC processes
     #[clap(default_value = "/tmp/text-generation-server-0", short, long, env)]
     master_shard_uds_path: String,
+
+    /// The string used to benchmark.
+    #[clap(default_value = LOREM_IPSUM)]
+    sample: String,
 
     /// Generation parameter in case you want to specifically test/debug particular
     /// decoding strategies, for full doc refer to the `text-generation-server`
@@ -114,6 +119,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         decode_length,
         runs,
         warmups,
+        sample,
         temperature,
         top_k,
         top_p,
@@ -182,6 +188,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 top_n_tokens,
                 runs,
                 warmups,
+                sample,
                 temperature,
                 top_k,
                 top_p,
