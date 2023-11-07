@@ -39,6 +39,7 @@ pub(crate) async fn generation_task(
     decode_length: u32,
     top_n_tokens: Option<u32>,
     n_runs: usize,
+    sample: String,
     warmups: usize,
     parameters: NextTokenChooserParameters,
     client: ShardedClient,
@@ -49,7 +50,7 @@ pub(crate) async fn generation_task(
     // End task if a message is received on shutdown_receiver
     // _shutdown_guard_sender will be dropped once the task is finished
     tokio::select! {
-        res = generate_runs(tokenizer, batch_size, sequence_length, decode_length, top_n_tokens, n_runs, warmups, parameters, client, run_sender.clone())  => {
+        res = generate_runs(tokenizer, batch_size, sequence_length, decode_length, top_n_tokens, n_runs, warmups, sample, parameters, client, run_sender.clone())  => {
             if let Err(err) = res {
                 run_sender.send(Err(err)).await.unwrap_or(());
             }
@@ -68,12 +69,13 @@ async fn generate_runs(
     top_n_tokens: Option<u32>,
     n_runs: usize,
     warmups: usize,
+    sample: String,
     parameters: NextTokenChooserParameters,
     mut client: ShardedClient,
     run_sender: mpsc::Sender<Result<Message, ClientError>>,
 ) -> Result<(), ClientError> {
     // Create a dummy sequence
-    let sequence = create_sequence(sequence_length, tokenizer);
+    let sequence = create_sequence(sample,sequence_length, tokenizer);
 
     for b in batch_size {
         // Warmups on batch size
@@ -213,11 +215,12 @@ async fn decode(batch: CachedBatch, client: &mut ShardedClient) -> Result<Decode
 }
 
 /// Create a dummy sequence of the correct length
-fn create_sequence(sequence_length: u32, tokenizer: Tokenizer) -> String {
-    let lorem_ipsum_length = tokenizer.encode(LOREM_IPSUM, true).unwrap().len();
+fn create_sequence(sample: String, sequence_length: u32, tokenizer: Tokenizer) -> String {
+    println!("{}", sample);
+    let sample_length = tokenizer.encode(sample.clone(), true).unwrap().len();
     // Repeat lorem ipsum to cover sequence length
     let string_sequence =
-        LOREM_IPSUM.repeat((0..sequence_length).step_by(lorem_ipsum_length).len());
+        sample.repeat((0..sequence_length).step_by(sample_length).len());
     // Encode sequence
     let mut encoding = tokenizer.encode(string_sequence, true).unwrap();
     // Truncate to sequence_length
